@@ -13,11 +13,12 @@ export const GET = async (req: NextRequest) => {
   // Validate redirect path to prevent open redirects
   const next = nextParam && isValidRedirectPath(nextParam) ? nextParam : "/leaderboard";
 
-  // Get the base URL for redirects
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
-    (process.env.NODE_ENV === 'production' 
-      ? `https://${req.headers.get('host')}` 
-      : 'http://localhost:3000');
+  // Get the base URL for redirects - use request headers for production
+  const host = req.headers.get('host');
+  const protocol = req.headers.get('x-forwarded-proto') || 'https';
+  const baseUrl = process.env.NODE_ENV === 'production' 
+    ? `${protocol}://${host}`
+    : 'http://localhost:3000';
 
   // Handle OAuth errors
   if (error) {
