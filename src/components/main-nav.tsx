@@ -1,62 +1,61 @@
 "use client";
 
-import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+import type { User } from "@supabase/supabase-js";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import { IconHome, IconTrophy, IconPlus, IconLogout, IconLogin } from "@tabler/icons-react";
 import {
-  Navbar,
-  NavBody,
-  NavItems,
-  NavbarLogo,
-  NavbarButton,
   MobileNav,
   MobileNavHeader,
   MobileNavMenu,
   MobileNavToggle,
+  NavBody,
+  Navbar,
+  NavbarButton,
+  NavbarLogo,
+  NavItems,
 } from "@/components/ui/resizable-navbar";
 import { createSupabaseBrowserClient } from "@/utils/supabase/client";
-import { usePathname, useRouter } from "next/navigation";
 
-export function MainNav() {
+export function MainNav({ user }: { user: User | null }) {
   const [isOpen, setIsOpen] = useState(false);
   const supabase = createSupabaseBrowserClient();
   const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = React.useState<any>(null);
-
-  React.useEffect(() => {
-    const getUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      setUser(data.user);
-    };
-    getUser();
-  }, [supabase.auth]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.refresh();
-    setUser(null);
   };
 
   const navItems = [
-    { name: "Home", link: "/" },
-    { name: "Leaderboard", link: "/leaderboard" },
-    { name: "New Submission", link: "/submission/new" },
+    { name: "Home", link: "/", icon: IconHome },
+    { name: "Leaderboard", link: "/leaderboard", icon: IconTrophy },
+    { name: "Submit", link: "/submission/new", icon: IconPlus },
   ];
+
 
   return (
     <Navbar className="top-2">
       <NavBody>
         <NavbarLogo />
         <NavItems items={navItems} />
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {user ? (
-            <NavbarButton onClick={handleLogout} className="cursor-pointer">Logout</NavbarButton>
+            <NavbarButton
+              onClick={handleLogout}
+              as="button"
+              className="cursor-pointer flex items-center gap-2"
+            >
+              <IconLogout className="w-4 h-4" />
+              Logout
+            </NavbarButton>
           ) : (
-            <Link href={`/login?next=${pathname}`}>
-              <NavbarButton>Login</NavbarButton>
-            </Link>
+            <NavbarButton href={`/login?next=${pathname}`} className="flex items-center gap-2">
+              <IconLogin className="w-4 h-4" />
+              Login
+            </NavbarButton>
           )}
         </div>
       </NavBody>
@@ -66,18 +65,34 @@ export function MainNav() {
           <MobileNavToggle isOpen={isOpen} onClick={() => setIsOpen(!isOpen)} />
         </MobileNavHeader>
         <MobileNavMenu isOpen={isOpen} onClose={() => setIsOpen(false)}>
-          {navItems.map((item, idx) => (
-            <Link href={item.link} key={idx} className="text-lg font-semibold text-neutral-600 dark:text-neutral-300">
-              {item.name}
-            </Link>
-          ))}
-           <div className="flex items-center gap-2 mt-4">
-            {user ? (
-              <NavbarButton onClick={handleLogout} className="cursor-pointer">Logout</NavbarButton>
-            ) : (
-              <Link href={`/login?next=${pathname}`}>
-                <NavbarButton>Login</NavbarButton>
+          {navItems.map((item, _idx) => {
+            const IconComponent = item.icon;
+            return (
+              <Link
+                href={item.link}
+                key={item.link}
+                className="w-full flex items-center gap-3 text-lg font-medium text-foreground hover:text-primary transition-colors"
+              >
+                <IconComponent className="w-5 h-5" />
+                {item.name}
               </Link>
+            );
+          })}
+          <div className="flex items-center gap-2 mt-6 pt-4 border-t border-border">
+            {user ? (
+              <NavbarButton
+                onClick={handleLogout}
+                as="button"
+                className="w-full cursor-pointer flex items-center justify-center gap-2"
+              >
+                <IconLogout className="w-4 h-4" />
+                Logout
+              </NavbarButton>
+            ) : (
+              <NavbarButton href={`/login?next=${pathname}`} className="w-full flex items-center justify-center gap-2">
+                <IconLogin className="w-4 h-4" />
+                Login
+              </NavbarButton>
             )}
           </div>
         </MobileNavMenu>

@@ -74,10 +74,10 @@ const main = async () => {
 
   // Insert submissions for first two users
   const ownerIds = createdUsers.slice(0, 2).map((u) => u.id);
-const rows = submissions.map((s, i) => ({
-  user_id: ownerIds[i % ownerIds.length],
-  title: s.title,
-  id: new URL(s.codepen_url).pathname.split("/").filter(Boolean).slice(-1)[0],
+  const rows = submissions.map((s, i) => ({
+    user_id: ownerIds[i % ownerIds.length],
+    title: s.title,
+    id: new URL(s.codepen_url).pathname.split("/").filter(Boolean).slice(-1)[0],
   }));
 
   // Upsert by unique composite of (user_id,title) via natural key emulation

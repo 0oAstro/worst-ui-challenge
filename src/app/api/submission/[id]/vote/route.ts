@@ -3,9 +3,9 @@ import { createSupabaseServerClient } from "@/utils/supabase/server";
 
 export const GET = async (
   _req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) => {
-  const submissionId = params.id;
+  const { id: submissionId } = await params;
   const supabase = await createSupabaseServerClient();
 
   const {
@@ -49,9 +49,9 @@ export const GET = async (
 
 export const POST = async (
   _req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) => {
-  const submissionId = params.id;
+  const { id: submissionId } = await params;
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -62,6 +62,44 @@ export const POST = async (
   }
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Check if user is voting for their own submission
+  const { data: submission, error: submissionError } = await supabase
+    .from("submissions")
+    .select("user_id")
+    .eq("id", submissionId)
+    .single();
+
+  if (submissionError) {
+    return NextResponse.json(
+      { error: submissionError.message },
+      { status: 500 },
+    );
+  }
+
+  if (submission.user_id === user.id) {
+    return NextResponse.json(
+      { error: "You cannot vote for your own submission." },
+      { status: 403 },
+    );
+  }
+
+  // Check user's total votes
+  const { count, error: countError } = await supabase
+    .from("votes")
+    .select("id", { count: "exact", head: true })
+    .eq("voter_id", user.id);
+
+  if (countError) {
+    return NextResponse.json({ error: countError.message }, { status: 500 });
+  }
+
+  if (count !== null && count >= 10) {
+    return NextResponse.json(
+      { error: "Vote limit reached. You can only vote up to 10 times." },
+      { status: 429 },
+    );
   }
 
   const { error } = await supabase
@@ -81,9 +119,9 @@ export const POST = async (
 
 export const DELETE = async (
   _req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) => {
-  const submissionId = params.id;
+  const { id: submissionId } = await params;
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },

@@ -1,69 +1,53 @@
-import { getTopSubmissions } from "@/lib/voting";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import { Card, CardContent } from "@/components/ui/card";
-import Link from "next/link";
+export const dynamic = "force-dynamic";
+
+import { Palette } from "lucide-react";
+import { getLatestSubmissions } from "@/lib/voting";
+import { SubmissionCard } from "@/components/submission-card";
 
 export default async function Home() {
-  const submissions = await getTopSubmissions(5);
+  const submissions = await getLatestSubmissions(6);
 
   return (
-    <main className="container mx-auto px-4 py-10">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold">The Worst UI Challenge</h1>
-        <p className="text-lg text-muted-foreground mt-2">
-          A collection of the most terrible user interfaces ever created.
+    <main className="container mx-auto px-6 sm:px-8 py-16 sm:py-20 max-w-7xl">
+      <div className="text-center mb-16 sm:mb-20">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6 sm:mb-8">
+          The Worst UI Challenge
+        </h1>
+        <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          A curated collection of the most terrible user interfaces ever created. 
+          Where bad design meets good humor.
         </p>
       </div>
 
-      <div className="mt-10">
-        <h2 className="text-2xl font-semibold mb-4">Top Submissions</h2>
+      <div className="mb-12 sm:mb-16">
+        <h2 className="text-2xl sm:text-3xl font-semibold mb-8 sm:mb-12 text-center">Latest Submissions</h2>
         {submissions && submissions.length > 0 ? (
-          <Carousel className="w-full max-w-4xl mx-auto">
-            <CarouselContent>
-              {submissions.map((submission) => (
-                <CarouselItem key={submission.id}>
-                  <div className="p-1">
-                    <Card>
-                      <CardContent className="flex flex-col items-center justify-center p-6">
-                        <h3 className="text-xl font-semibold mb-4">{submission.title}</h3>
-                        <div className="w-full rounded-md border overflow-hidden">
-                          <iframe
-                            height="300"
-                            style={{ width: "100%" }}
-                            scrolling="no"
-                            title={submission.title}
-                            src={`https://codepen.io/team/codepen/embed/${submission.id}?default-tab=result`}
-                            frameBorder="no"
-                            loading="lazy"
-                            allowFullScreen={true}
-                          >
-                            See the Pen{" "}
-                            <a href={`https://codepen.io/pen/${submission.id}`}>
-                              {submission.title}
-                            </a>
-                            .
-                          </iframe>
-                        </div>
-                        <Link href={`/submission/${submission.id}`} className="mt-4 text-sm underline">
-                          View Details
-                        </Link>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious />
-            <CarouselNext />
-          </Carousel>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10">
+            {submissions.map((submission, index) => (
+              <div 
+                key={submission.id} 
+                className="relative"
+                style={{
+                  animationDelay: `${index * 100}ms`,
+                  animation: 'fadeInUp 0.6s ease-out forwards',
+                  opacity: 0,
+                  transform: 'translateY(20px)'
+                }}
+              >
+                <SubmissionCard submission={submission} />
+              </div>
+            ))}
+          </div>
         ) : (
-          <p className="text-center text-muted-foreground">No submissions yet.</p>
+          <div className="text-center py-20">
+            <div className="w-20 h-20 mx-auto mb-8 rounded-full bg-muted flex items-center justify-center">
+              <Palette className="w-10 h-10 text-muted-foreground" />
+            </div>
+            <h3 className="text-2xl font-semibold mb-3">No submissions yet</h3>
+            <p className="text-muted-foreground text-lg">
+              Be the first to submit your terrible UI creation.
+            </p>
+          </div>
         )}
       </div>
     </main>

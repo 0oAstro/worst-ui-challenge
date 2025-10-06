@@ -1,59 +1,52 @@
-import Link from "next/link";
+export const dynamic = "force-dynamic";
+
+import { Trophy } from "lucide-react";
 import { getTopSubmissions } from "@/lib/voting";
-import { Card } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { LeaderboardCard } from "@/components/leaderboard-card";
 
 export default async function LeaderboardPage() {
-  const submissions = await getTopSubmissions(20);
+  const submissions = await getTopSubmissions(10);
 
   if (!submissions || submissions.length === 0) {
     return (
-      <main className="mx-auto max-w-3xl px-4 py-10">
-        <h1 className="text-2xl font-semibold">Leaderboard</h1>
-        <Separator className="my-4" />
-        <p className="text-sm text-muted-foreground">No submissions yet.</p>
+      <main className="container mx-auto px-6 sm:px-8 py-16 sm:py-20 max-w-4xl">
+        <div className="text-center mb-12 sm:mb-16">
+          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-6 sm:mb-8">Leaderboard</h1>
+          <p className="text-lg sm:text-xl text-muted-foreground">
+            Top performing terrible UI submissions
+          </p>
+        </div>
+        <div className="text-center py-20">
+          <div className="w-20 h-20 mx-auto mb-8 rounded-full bg-muted flex items-center justify-center">
+            <Trophy className="w-10 h-10 text-muted-foreground" />
+          </div>
+          <h3 className="text-2xl font-semibold mb-3">No submissions yet</h3>
+          <p className="text-muted-foreground text-lg">
+            Submit your terrible UI to see it on the leaderboard.
+          </p>
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="text-2xl font-semibold">Leaderboard</h1>
-      <Separator className="my-4" />
+    <main className="container mx-auto px-6 sm:px-8 py-16 sm:py-20 max-w-4xl">
+      <div className="text-center mb-12 sm:mb-16">
+        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-6 sm:mb-8">Leaderboard</h1>
+        <p className="text-lg sm:text-xl text-muted-foreground">
+          Top performing terrible UI submissions
+        </p>
+      </div>
 
-      <ul className="space-y-3">
-        {submissions.map((s, index) => (
-          <li key={s.id}>
-            <Card className="flex items-center justify-between gap-4 p-4">
-              <div className="flex items-center gap-4">
-                <span className="w-8 text-center text-sm font-medium tabular-nums">
-                  {index + 1}
-                </span>
-                <div>
-                  <Link
-                    href={`/submission/${s.id}`}
-                    className="text-base font-medium hover:underline focus:outline-none focus:ring-2 focus:ring-ring"
-                    aria-label={`Open submission ${s.title}`}
-                  >
-                    {s.title}
-                  </Link>
-                  <div className="text-xs text-muted-foreground">
-                    {new Date(s.created_at).toLocaleString()}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-lg font-semibold tabular-nums">
-                  {s.total_votes}
-                </span>
-                <span className="text-xs text-muted-foreground">votes</span>
-              </div>
-            </Card>
-          </li>
+      <div className="space-y-4 sm:space-y-6">
+        {submissions.map((submission, index) => (
+          <LeaderboardCard 
+            key={submission.id} 
+            submission={submission} 
+            rank={index + 1} 
+          />
         ))}
-      </ul>
+      </div>
     </main>
   );
 }
-
-

@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+import { Check, ExternalLink, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import {
   Field,
@@ -19,8 +20,9 @@ import {
   FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { createSupabaseBrowserClient } from "@/utils/supabase/client";
-import { cn } from "@/lib/utils";
+import { createSubmissionAction } from "./actions";
+import { createSafeCodepenEmbedUrl, createSafeCodepenPenUrl } from "@/lib/security";
+import { SubmissionCheck } from "@/components/submission-check";
 
 type ValidationErrors = {
   title?: string;
@@ -28,51 +30,69 @@ type ValidationErrors = {
   form?: string;
 };
 
-const extractCodepenPenId = (value: string): string | null => {
+const extractCodepenInfo = (
+  value: string,
+): { username: string | null; penId: string | null } => {
   try {
     const url = new URL(value);
-    if (!/(^|\.)codepen\.io$/i.test(url.hostname)) return null;
+    if (!/(^|\.)codepen\.io$/i.test(url.hostname)) {
+      return { username: null, penId: null };
+    }
     const path = url.pathname.replace(/\/+$/, "");
-    const parts = path.split("/").filter(Boolean);
-    if (parts.length === 0) return null;
-    if (parts[0].toLowerCase() === "pen" && parts[1]) return parts[1];
-    if (
-      parts.length >= 3 &&
-      ["pen", "full", "embed"].includes(parts[1].toLowerCase())
-    )
-      return parts[2] || null;
-    return null;
+    const parts = path.split("/").filter(Boolean); // e.g. ["user", "pen", "hash"]
+
+    // Standard format: /username/pen/hash
+    if (parts.length >= 3 && parts[1].toLowerCase() === "pen") {
+      const username = parts[0];
+      const penId = parts[2];
+      return { username, penId };
+    }
+
+    // Simpler format: /pen/hash (assuming anonymous user)
+    if (parts.length >= 2 && parts[0].toLowerCase() === "pen") {
+      const username = "anon"; // Default to 'anon' if username is not in URL
+      const penId = parts[1];
+      return { username, penId };
+    }
+
+    return { username: null, penId: null };
   } catch {
-    return null;
+    return { username: null, penId: null };
   }
 };
 
-const isValidCodepenUrl = (value: string): boolean =>
-  Boolean(extractCodepenPenId(value));
+const isValidCodepenUrl = (value: string): boolean => {
+  const { penId, username } = extractCodepenInfo(value);
+  return Boolean(penId && username);
+};
 
 export default function NewSubmissionPage() {
-  const supabase = createSupabaseBrowserClient();
   const router = useRouter();
 
   const [title, setTitle] = useState("");
   const [codepenUrl, setCodepenUrl] = useState("");
   const [penId, setPenId] = useState<string | null>(null);
+  const [codepenUsername, setCodepenUsername] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<ValidationErrors>({});
+  const [iframeLoaded, setIframeLoaded] = useState(false);
 
   const canSubmit = useMemo(() => {
     if (title.trim().length < 3 || title.trim().length > 120) return false;
-    if (!penId) return false;
+    if (!penId || !codepenUsername) return false;
     return true;
-  }, [title, penId]);
+  }, [title, penId, codepenUsername]);
 
   const handleFetchPen = () => {
-    const id = extractCodepenPenId(codepenUrl);
-    setPenId(id);
-    if (!id) {
+    const { penId, username } = extractCodepenInfo(codepenUrl);
+    setPenId(penId);
+    setCodepenUsername(username);
+
+    if (!penId || !username) {
       setErrors((prev) => ({
         ...prev,
-        codepen_url: "Enter a valid CodePen URL like https://codepen.io/user/pen/hash",
+        codepen_url:
+          "Enter a valid CodePen URL like https://codepen.io/user/pen/hash",
       }));
     } else {
       setErrors((prev) => ({ ...prev, codepen_url: undefined }));
@@ -86,7 +106,7 @@ export default function NewSubmissionPage() {
     if (title.trim().length < 3 || title.trim().length > 120) {
       nextErrors.title = "Title must be 3-120 characters.";
     }
-    if (!penId) {
+    if (!penId || !codepenUsername) {
       nextErrors.codepen_url = "Fetch a valid CodePen URL before submitting.";
     }
     setErrors(nextErrors);
@@ -94,156 +114,200 @@ export default function NewSubmissionPage() {
 
     setIsSubmitting(true);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session?.user?.id) {
-        setErrors({ form: "You must be signed in to submit." });
-        setIsSubmitting(false);
-        return;
-      }
-
-      const userId = sessionData.session.user.id;
-
-      const { data, error } = await supabase
-        .from("submissions")
-        .insert({ id: penId, user_id: userId, title: title.trim() })
-        .select("id")
-        .single();
-
-      if (error) {
-        setErrors({ form: error.message ?? "Failed to create submission." });
-        setIsSubmitting(false);
-        return;
-      }
+      const data = await createSubmissionAction({
+        id: penId!,
+        title: title.trim(),
+        codepen_username: codepenUsername!,
+      });
 
       router.push(`/submission/${data.id}`);
       router.refresh();
-    } catch (err) {
-      setErrors({ form: "Unexpected error. Please try again." });
+    } catch (error) {
+      setErrors({ form: (error as Error).message });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="container mx-auto max-w-xl px-4 py-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Submit your entry</CardTitle>
-          <CardDescription>Provide a title and a CodePen URL.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-col gap-6"
-            aria-label="Submission form"
-          >
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="title">Title</FieldLabel>
-                <FieldContent>
-                  <Input
-                    id="title"
-                    name="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Worst UI widget title"
-                    aria-invalid={Boolean(errors.title)}
-                    aria-describedby={errors.title ? "title-error" : undefined}
-                  />
-                </FieldContent>
-                <FieldError
-                  id="title-error"
-                  errors={errors.title ? [{ message: errors.title }] : []}
-                />
-              </Field>
+    <SubmissionCheck>
+      <div className="container mx-auto px-6 sm:px-8 py-16 sm:py-20 max-w-4xl">
+      <div className="text-center mb-12 sm:mb-16">
+        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-6 sm:mb-8">Submit Your Entry</h1>
+        <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
+          Share your terrible UI creation with the world. The worse, the better.
+        </p>
+      </div>
 
-              <Field>
-                <FieldLabel htmlFor="codepen">CodePen URL</FieldLabel>
-                <FieldContent className="flex-row gap-2">
-                  <Input
-                    id="codepen"
-                    name="codepen"
-                    value={codepenUrl}
-                    onChange={(e) => {
-                      setCodepenUrl(e.target.value);
-                      setPenId(null);
-                    }}
-                    placeholder="https://codepen.io/user/pen/abc123"
-                    inputMode="url"
-                    aria-invalid={Boolean(errors.codepen_url)}
-                    aria-describedby={
-                      errors.codepen_url ? "codepen-error" : undefined
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10">
+        <Card>
+          <CardHeader className="pb-6">
+            <CardTitle className="text-2xl">Submission Details</CardTitle>
+            <CardDescription className="text-base">
+              Provide a title and CodePen URL for your terrible UI creation.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-col gap-6"
+              aria-label="Submission form"
+            >
+              <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="title">Title</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      id="title"
+                      name="title"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="My Terrible UI Widget"
+                      aria-invalid={Boolean(errors.title)}
+                      aria-describedby={errors.title ? "title-error" : undefined}
+                      className="h-12"
+                    />
+                  </FieldContent>
+                  <FieldError
+                    id="title-error"
+                    errors={errors.title ? [{ message: errors.title }] : []}
+                  />
+                </Field>
+
+                <Field>
+                  <FieldLabel htmlFor="codepen">CodePen URL</FieldLabel>
+                  <FieldContent className="flex-col sm:flex-row gap-3">
+                    <Input
+                      id="codepen"
+                      name="codepen"
+                      value={codepenUrl}
+                      onChange={(e) => {
+                        setCodepenUrl(e.target.value);
+                        setPenId(null);
+                        setCodepenUsername(null);
+                      }}
+                      placeholder="https://codepen.io/username/pen/abc123"
+                      inputMode="url"
+                      aria-invalid={Boolean(errors.codepen_url)}
+                      aria-describedby={
+                        errors.codepen_url ? "codepen-error" : undefined
+                      }
+                      className="h-12"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleFetchPen}
+                      disabled={!isValidCodepenUrl(codepenUrl)}
+                      className="h-12 px-6 w-full sm:w-auto"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Fetch
+                    </Button>
+                  </FieldContent>
+                  <FieldError
+                    id="codepen-error"
+                    errors={
+                      errors.codepen_url ? [{ message: errors.codepen_url }] : []
                     }
                   />
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={handleFetchPen}
-                    disabled={!isValidCodepenUrl(codepenUrl)}
-                  >
-                    Fetch
-                  </Button>
-                </FieldContent>
-                <FieldError
-                  id="codepen-error"
-                  errors={
-                    errors.codepen_url ? [{ message: errors.codepen_url }] : []
-                  }
-                />
-              </Field>
-            </FieldGroup>
+                </Field>
+              </FieldGroup>
 
-            {penId && (
-              <div className="rounded-md border">
-                <iframe
-                  height="300"
-                  style={{ width: "100%" }}
-                  scrolling="no"
-                  title="CodePen Embed"
-                  src={`https://codepen.io/team/codepen/embed/${penId}?default-tab=result`}
-                  frameBorder="no"
-                  loading="lazy"
-                  allowFullScreen={true}
+              {errors.form ? (
+                <div className="text-destructive text-sm p-4 bg-destructive/10 rounded-lg border border-destructive/20" role="alert">
+                  {errors.form}
+                </div>
+              ) : null}
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.back()}
+                  aria-label="Go back"
+                  className="flex-1"
                 >
-                  See the Pen{" "}
-                  <a href={`https://codepen.io/pen/${penId}`}>
-                    {title || "CodePen"}
-                  </a>
-                  .
-                </iframe>
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={!canSubmit || isSubmitting}
+                  aria-label="Create submission"
+                  className="flex-1"
+                >
+                  {isSubmitting ? "Submitting..." : "Submit Entry"}
+                </Button>
               </div>
-            )}
+            </form>
+          </CardContent>
+        </Card>
 
-            {errors.form ? (
-              <div className="text-destructive text-sm" role="alert">
-                {errors.form}
-              </div>
-            ) : null}
+        <div className="space-y-8">
+          {penId && codepenUsername && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl">Preview</CardTitle>
+                <CardDescription>
+                  This is how your submission will appear to others.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="relative h-0 overflow-hidden rounded-lg border pb-[56.25%]">
+                  <iframe
+                    className="absolute left-0 top-0 h-full w-full"
+                    scrolling="no"
+                    title="CodePen Embed"
+                    src={createSafeCodepenEmbedUrl(codepenUsername, penId)}
+                    frameBorder="no"
+                    loading="lazy"
+                    allowFullScreen={true}
+                    onLoad={() => setIframeLoaded(true)}
+                  >
+                    See the Pen{" "}
+                    <a
+                      href={createSafeCodepenPenUrl(codepenUsername, penId)}
+                    >
+                      {title || "CodePen"}
+                    </a>
+                    .
+                  </iframe>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-            <FieldSeparator />
-
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => router.back()}
-                aria-label="Go back"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={!canSubmit || isSubmitting}
-                aria-label="Create submission"
-              >
-                {isSubmitting ? "Submitting..." : "Submit"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+          {!iframeLoaded && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl">Submission Guidelines</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4 text-sm text-muted-foreground">
+                  <div className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    <p>Make it intentionally terrible - the worse, the better</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    <p>Use CodePen to create your terrible UI</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    <p>Be creative and have fun with it</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    <p>One submission per user</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
+    </SubmissionCheck>
   );
 }
-
-

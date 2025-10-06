@@ -4,6 +4,7 @@ export type Submission = {
   id: string;
   user_id: string;
   title: string;
+  codepen_username: string;
   created_at: string;
   updated_at: string;
 };
@@ -20,22 +21,72 @@ export type SubmissionVoteStats = {
   total_votes: number;
 };
 
-export const getTopSubmissions = async (limit: number = 10) => {
+export type SubmissionWithAuthor = Pick<
+  Submission,
+  "id" | "user_id" | "title" | "created_at" | "codepen_username"
+> & {
+  total_votes: number;
+  author_name: string;
+};
+
+export const getTopSubmissions = async (
+  limit: number = 10,
+): Promise<SubmissionWithAuthor[]> => {
   const supabase = await createSupabaseServerClient();
   const capped = Math.max(1, Math.min(100, Number(limit) || 10));
   const { data, error } = await supabase.rpc("get_top_submissions", {
     limit_count: capped,
   });
   if (error) throw new Error(error.message);
-  return data as Array<Pick<Submission, "id" | "user_id" | "title" | "created_at"> & { total_votes: number }>;
+  return data as SubmissionWithAuthor[];
+};
+
+export const getLatestSubmissions = async (
+  limit: number = 10,
+): Promise<SubmissionWithAuthor[]> => {
+  const supabase = await createSupabaseServerClient();
+  const capped = Math.max(1, Math.min(100, Number(limit) || 10));
+  const { data, error } = await supabase.rpc("get_latest_submissions", {
+    limit_count: capped,
+  });
+  if (error) throw new Error(error.message);
+  return data as SubmissionWithAuthor[];
 };
 
 export const getSubmissionById = async (submissionId: string) => {
   const supabase = await createSupabaseServerClient();
+  
+  // Get submission data
+  const { data: submission, error: submissionError } = await supabase
+    .from("submissions")
+    .select("*")
+    .eq("id", submissionId)
+    .maybeSingle();
+    
+  if (submissionError) throw new Error(submissionError.message);
+  if (!submission) return null;
+  
+  // Get author name from profiles
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", submission.user_id)
+    .maybeSingle();
+    
+  if (profileError) throw new Error(profileError.message);
+  
+  return {
+    ...submission,
+    author_name: profile?.display_name || "Anonymous"
+  } as SubmissionWithAuthor;
+};
+
+export const getSubmissionByUserId = async (userId: string) => {
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("submissions")
-    .select("id,user_id,title,created_at,updated_at")
-    .eq("id", submissionId)
+    .select("*")
+    .eq("user_id", userId)
     .maybeSingle();
   if (error) throw new Error(error.message);
   return data as Submission | null;
@@ -44,6 +95,7 @@ export const getSubmissionById = async (submissionId: string) => {
 export const createSubmission = async (params: {
   id: string;
   title: string;
+  codepen_username: string;
 }) => {
   const supabase = await createSupabaseServerClient();
   const {
@@ -57,12 +109,13 @@ export const createSubmission = async (params: {
     id: params.id,
     user_id: user.id,
     title: params.title,
+    codepen_username: params.codepen_username,
   };
 
   const { data, error } = await supabase
     .from("submissions")
     .insert(payload)
-    .select("id,user_id,title,created_at,updated_at")
+    .select("*")
     .single();
   if (error) throw new Error(error.message);
   return data as Submission;

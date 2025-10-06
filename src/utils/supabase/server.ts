@@ -15,14 +15,10 @@ export const createSupabaseServerClient = async () => {
       get(name: string) {
         return cookieStore.get(name)?.value;
       },
-      set(
-        name: string,
-        value: string,
-        options?: Parameters<typeof cookieStore.set>[1],
-      ) {
+      set(name: string, value: string, options?: any) {
         cookieStore.set(name, value, options);
       },
-      remove(name: string, options?: Parameters<typeof cookieStore.set>[1]) {
+      remove(name: string, options?: any) {
         cookieStore.set(name, "", { ...options, expires: new Date(0) });
       },
     },
