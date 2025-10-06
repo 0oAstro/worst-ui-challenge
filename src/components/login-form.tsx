@@ -15,7 +15,9 @@ export function LoginForm({
   const searchParams = useSearchParams();
 
   const handleLoginWithMicrosoft = async () => {
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    // Use environment variable for production, fallback to current origin for development
+    const origin = process.env.NEXT_PUBLIC_SITE_URL || 
+      (typeof window !== "undefined" ? window.location.origin : "");
     const nextParam = searchParams.get("next");
     
     // Validate redirect path to prevent open redirects

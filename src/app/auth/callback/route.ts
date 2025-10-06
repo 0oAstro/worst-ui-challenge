@@ -13,13 +13,19 @@ export const GET = async (req: NextRequest) => {
   // Validate redirect path to prevent open redirects
   const next = nextParam && isValidRedirectPath(nextParam) ? nextParam : "/leaderboard";
 
+  // Get the base URL for redirects
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+    (process.env.NODE_ENV === 'production' 
+      ? `https://${req.headers.get('host')}` 
+      : 'http://localhost:3000');
+
   // Handle OAuth errors
   if (error) {
     console.error("OAuth error:", error, errorDescription);
     return NextResponse.redirect(
       new URL(
         `/login?error=${encodeURIComponent(errorDescription || error)}`,
-        req.url,
+        baseUrl,
       ),
     );
   }
@@ -28,7 +34,7 @@ export const GET = async (req: NextRequest) => {
     return NextResponse.redirect(
       new URL(
         `/login?error=${encodeURIComponent("Missing OAuth code")}`,
-        req.url,
+        baseUrl,
       ),
     );
   }
@@ -41,7 +47,7 @@ export const GET = async (req: NextRequest) => {
     if (exchangeError) {
       console.error("Session exchange error:", exchangeError);
       return NextResponse.redirect(
-        new URL(`/login?error=${encodeURIComponent(exchangeError.message)}`, req.url),
+        new URL(`/login?error=${encodeURIComponent(exchangeError.message)}`, baseUrl),
       );
     }
 
@@ -69,16 +75,16 @@ export const GET = async (req: NextRequest) => {
       }
       
       // Successful session creation; redirect to main page or intended URL
-      return NextResponse.redirect(new URL(next, req.url));
+      return NextResponse.redirect(new URL(next, baseUrl));
     } else {
       return NextResponse.redirect(
-        new URL(`/login?error=${encodeURIComponent("Failed to create user session")}`, req.url),
+        new URL(`/login?error=${encodeURIComponent("Failed to create user session")}`, baseUrl),
       );
     }
   } catch (err) {
     console.error("Unexpected error in auth callback:", err);
     return NextResponse.redirect(
-      new URL(`/login?error=${encodeURIComponent("An unexpected error occurred")}`, req.url),
+      new URL(`/login?error=${encodeURIComponent("An unexpected error occurred")}`, baseUrl),
     );
   }
 };
