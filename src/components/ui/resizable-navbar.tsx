@@ -130,7 +130,7 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
             onMouseEnter={() => setHovered(idx)}
             onClick={onItemClick}
             className="relative px-4 py-2 text-neutral-600 dark:text-neutral-300 flex items-center gap-2"
-            key={`link-${idx}`}
+            key={item.link}
             href={item.link}
           >
             {hovered === idx && (

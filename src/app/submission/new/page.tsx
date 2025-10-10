@@ -18,7 +18,6 @@ import {
   FieldError,
   FieldGroup,
   FieldLabel,
-  FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -112,15 +111,20 @@ export default function NewSubmissionPage() {
     if (!penId || !codepenUsername) {
       nextErrors.codepen_url = "Fetch a valid CodePen URL before submitting.";
     }
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
+    if (!penId || !codepenUsername) {
+      setErrors((prev) => ({
+        ...prev,
+        codepen_url: "Fetch a valid CodePen URL before submitting.",
+      }));
+      return;
+    }
 
     setIsSubmitting(true);
     try {
       const data = await createSubmissionAction({
-        id: penId!,
+        id: penId,
         title: title.trim(),
-        codepen_username: codepenUsername!,
+        codepen_username: codepenUsername,
       });
 
       router.push(`/submission/${data.id}`);
