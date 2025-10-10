@@ -1,8 +1,8 @@
 export const dynamic = "force-dynamic";
 
 import { Palette } from "lucide-react";
-import { getLatestSubmissions } from "@/lib/voting";
 import { SubmissionCard } from "@/components/submission-card";
+import { getLatestSubmissions } from "@/lib/voting";
 
 export default async function Home() {
   const submissions = await getLatestSubmissions(6);
@@ -14,24 +14,26 @@ export default async function Home() {
           The Worst UI Challenge
         </h1>
         <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-          A curated collection of the most terrible user interfaces ever created. 
-          Where bad design meets good humor.
+          A curated collection of the most terrible user interfaces ever
+          created. Where bad design meets good humor.
         </p>
       </div>
 
       <div className="mb-12 sm:mb-16">
-        <h2 className="text-2xl sm:text-3xl font-semibold mb-8 sm:mb-12 text-center">Latest Submissions</h2>
+        <h2 className="text-2xl sm:text-3xl font-semibold mb-8 sm:mb-12 text-center">
+          Latest Submissions
+        </h2>
         {submissions && submissions.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10">
             {submissions.map((submission, index) => (
-              <div 
-                key={submission.id} 
+              <div
+                key={submission.id}
                 className="relative"
                 style={{
                   animationDelay: `${index * 100}ms`,
-                  animation: 'fadeInUp 0.6s ease-out forwards',
+                  animation: "fadeInUp 0.6s ease-out forwards",
                   opacity: 0,
-                  transform: 'translateY(20px)'
+                  transform: "translateY(20px)",
                 }}
               >
                 <SubmissionCard submission={submission} />

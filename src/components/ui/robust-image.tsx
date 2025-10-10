@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 interface RobustImageProps {
   src: string;
@@ -13,14 +13,14 @@ interface RobustImageProps {
   fallbackComponent?: React.ReactNode;
 }
 
-export const RobustImage = ({ 
-  src, 
-  alt, 
-  width, 
-  height, 
-  className, 
+export const RobustImage = ({
+  src,
+  alt,
+  width,
+  height,
+  className,
   onError,
-  fallbackComponent 
+  fallbackComponent,
 }: RobustImageProps) => {
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,15 +44,19 @@ export const RobustImage = ({
     if (fallbackComponent) {
       return <>{fallbackComponent}</>;
     }
-    
+
     return (
-      <div 
+      <div
         className={`${className} bg-muted flex items-center justify-center border-2 border-dashed border-muted-foreground/20 relative`}
         style={{ width, height }}
       >
         <div className="text-center">
-          <div className="text-muted-foreground text-sm mb-1">Image unavailable</div>
-          <div className="text-xs text-muted-foreground/60">External image blocked</div>
+          <div className="text-muted-foreground text-sm mb-1">
+            Image unavailable
+          </div>
+          <div className="text-xs text-muted-foreground/60">
+            External image blocked
+          </div>
         </div>
       </div>
     );
@@ -61,10 +65,12 @@ export const RobustImage = ({
   return (
     <div className="relative" style={{ width, height }}>
       {isLoading && (
-        <div 
+        <div
           className={`${className} bg-muted flex items-center justify-center absolute inset-0`}
         >
-          <div className="animate-pulse text-muted-foreground text-sm">Loading...</div>
+          <div className="animate-pulse text-muted-foreground text-sm">
+            Loading...
+          </div>
         </div>
       )}
       <Image
@@ -72,7 +78,7 @@ export const RobustImage = ({
         alt={alt}
         width={width}
         height={height}
-        className={`${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
+        className={`${className} ${isLoading ? "opacity-0" : "opacity-100"} transition-opacity duration-300`}
         onError={handleError}
         onLoad={handleLoad}
       />

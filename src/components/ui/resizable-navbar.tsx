@@ -1,15 +1,13 @@
 "use client";
-import { cn } from "@/lib/utils";
 import { IconMenu2, IconX } from "@tabler/icons-react";
 import {
-  motion,
   AnimatePresence,
-  useScroll,
+  motion,
   useMotionValueEvent,
+  useScroll,
 } from "motion/react";
-
 import React, { useRef, useState } from "react";
-
+import { cn } from "@/lib/utils";
 
 interface NavbarProps {
   children: React.ReactNode;
@@ -141,7 +139,9 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
                 className="absolute inset-0 h-full w-full rounded-full bg-gray-100 dark:bg-neutral-800"
               />
             )}
-            {IconComponent && <IconComponent className="w-4 h-4 relative z-20" />}
+            {IconComponent && (
+              <IconComponent className="w-4 h-4 relative z-20" />
+            )}
             <span className="relative z-20">{item.name}</span>
           </a>
         );

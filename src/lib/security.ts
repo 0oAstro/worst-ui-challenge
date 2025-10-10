@@ -9,7 +9,7 @@
  */
 export const isValidRedirectPath = (path: string): boolean => {
   // Must start with / but not // (which would be a protocol-relative URL)
-  return path.startsWith('/') && !path.startsWith('//');
+  return path.startsWith("/") && !path.startsWith("//");
 };
 
 /**
@@ -36,7 +36,10 @@ export const sanitizeCodepenId = (id: string): string => {
  * @param id - The pen ID
  * @returns A safe CodePen embed URL
  */
-export const createSafeCodepenEmbedUrl = (username: string, id: string): string => {
+export const createSafeCodepenEmbedUrl = (
+  username: string,
+  id: string,
+): string => {
   const safeUsername = sanitizeCodepenUsername(username);
   const safeId = sanitizeCodepenId(id);
   return `https://codepen.io/${safeUsername}/embed/${safeId}?default-tab=result&editable=false`;
@@ -48,7 +51,10 @@ export const createSafeCodepenEmbedUrl = (username: string, id: string): string 
  * @param id - The pen ID
  * @returns A safe CodePen pen URL
  */
-export const createSafeCodepenPenUrl = (username: string, id: string): string => {
+export const createSafeCodepenPenUrl = (
+  username: string,
+  id: string,
+): string => {
   const safeUsername = sanitizeCodepenUsername(username);
   const safeId = sanitizeCodepenId(id);
   return `https://codepen.io/${safeUsername}/pen/${safeId}`;

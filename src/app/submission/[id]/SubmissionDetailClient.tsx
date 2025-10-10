@@ -1,10 +1,10 @@
 "use client";
 
+import { ArrowLeft, Code, ExternalLink, Trash2, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, ExternalLink, Trash2, User, Code } from "lucide-react";
 import VoteActions from "@/app/submission/[id]/vote-actions";
 import {
   AlertDialog,
@@ -20,8 +20,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import {
+  createSafeCodepenEmbedUrl,
+  createSafeCodepenPenUrl,
+} from "@/lib/security";
 import type { SubmissionWithAuthor } from "@/lib/voting";
-import { createSafeCodepenEmbedUrl, createSafeCodepenPenUrl } from "@/lib/security";
 
 type SubmissionStats = {
   total_votes: number;
@@ -109,12 +112,17 @@ export default function SubmissionDetailClient({
                 </div>
                 <VoteActions submissionId={submission.id} />
               </div>
-              
+
               {isOwner && (
                 <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-border">
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="destructive" disabled={isDeleting} size="sm" className="w-full sm:w-auto">
+                      <Button
+                        variant="destructive"
+                        disabled={isDeleting}
+                        size="sm"
+                        className="w-full sm:w-auto"
+                      >
                         <Trash2 className="w-4 h-4 mr-2" />
                         Delete Submission
                       </Button>
@@ -125,8 +133,8 @@ export default function SubmissionDetailClient({
                           Are you absolutely sure?
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                          This action is permanent and all votes will be lost. We
-                          recommend editing your Pen on CodePen instead, as
+                          This action is permanent and all votes will be lost.
+                          We recommend editing your Pen on CodePen instead, as
                           changes will be reflected here automatically.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
@@ -141,9 +149,17 @@ export default function SubmissionDetailClient({
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-                  <Button asChild size="sm" variant="outline" className="w-full sm:w-auto">
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                  >
                     <a
-                      href={createSafeCodepenPenUrl(submission.codepen_username, submission.id)}
+                      href={createSafeCodepenPenUrl(
+                        submission.codepen_username,
+                        submission.id,
+                      )}
                       target="_blank"
                       rel="noreferrer"
                       aria-label="Open CodePen"
@@ -157,7 +173,7 @@ export default function SubmissionDetailClient({
             </div>
           </Card>
         </div>
-        
+
         <div className="lg:col-span-1">
           <Card className="h-fit">
             <div className="p-6">
@@ -166,15 +182,23 @@ export default function SubmissionDetailClient({
                 <div className="flex items-start gap-3">
                   <User className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div>
-                    <div className="text-sm text-muted-foreground mb-1">Author</div>
-                    <div className="font-medium">{submission.author_name || "Anonymous"}</div>
+                    <div className="text-sm text-muted-foreground mb-1">
+                      Author
+                    </div>
+                    <div className="font-medium">
+                      {submission.author_name || "Anonymous"}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <Code className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div>
-                    <div className="text-sm text-muted-foreground mb-1">CodePen Username</div>
-                    <div className="font-medium">{submission.codepen_username}</div>
+                    <div className="text-sm text-muted-foreground mb-1">
+                      CodePen Username
+                    </div>
+                    <div className="font-medium">
+                      {submission.codepen_username}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -189,14 +213,20 @@ export default function SubmissionDetailClient({
             className="absolute left-0 top-0 h-full w-full"
             scrolling="no"
             title={submission.title}
-            src={createSafeCodepenEmbedUrl(submission.codepen_username, submission.id)}
+            src={createSafeCodepenEmbedUrl(
+              submission.codepen_username,
+              submission.id,
+            )}
             frameBorder="no"
             loading="lazy"
             allowFullScreen={true}
           >
             See the Pen{" "}
             <a
-              href={createSafeCodepenPenUrl(submission.codepen_username, submission.id)}
+              href={createSafeCodepenPenUrl(
+                submission.codepen_username,
+                submission.id,
+              )}
             >
               {submission.title}
             </a>

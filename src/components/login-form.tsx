@@ -3,9 +3,9 @@
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { isValidRedirectPath } from "@/lib/security";
 import { cn } from "@/lib/utils";
 import { createSupabaseBrowserClient } from "@/utils/supabase/client";
-import { isValidRedirectPath } from "@/lib/security";
 
 export function LoginForm({
   className,
@@ -15,18 +15,28 @@ export function LoginForm({
   const searchParams = useSearchParams();
 
   const handleLoginWithMicrosoft = async () => {
-    // Use current origin for both development and production
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const getURL = () => {
+      let url =
+        process?.env?.NEXT_PUBLIC_SITE_URL ?? // Set this to your site URL in production env.
+        process?.env?.NEXT_PUBLIC_VERCEL_URL ?? // Automatically set by Vercel.
+        "http://localhost:3000/";
+      // Make sure to include `https://` when not localhost.
+      url = url.startsWith("http") ? url : `https://${url}`;
+      // Make sure to include a trailing `/`.
+      url = url.endsWith("/") ? url : `${url}/`;
+      return url;
+    };
     const nextParam = searchParams.get("next");
-    
+
     // Validate redirect path to prevent open redirects
-    const next = nextParam && isValidRedirectPath(nextParam) ? nextParam : "/leaderboard";
-    
+    const next =
+      nextParam && isValidRedirectPath(nextParam) ? nextParam : "/leaderboard";
+
     await supabase.auth.signInWithOAuth({
       provider: "azure",
       options: {
         scopes: "openid profile email offline_access User.Read",
-        redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        redirectTo: `${getURL()}auth/callback?next=${encodeURIComponent(next)}`,
       },
     });
   };
@@ -88,7 +98,8 @@ export function LoginForm({
           {/* Footer */}
           <div className="pt-4">
             <p className="text-xs text-muted-foreground">
-              By continuing, you agree to our terms of service and privacy policy
+              By continuing, you agree to our terms of service and privacy
+              policy
             </p>
           </div>
         </div>

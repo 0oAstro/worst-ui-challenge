@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { getUserSubmission } from "@/app/submission/new/actions";
 
 type SubmissionCheckProps = {
@@ -28,7 +28,7 @@ export function SubmissionCheck({ children }: SubmissionCheckProps) {
         setHasChecked(true);
       }
     };
-    
+
     checkSubmission();
   }, [router]);
 
@@ -38,7 +38,9 @@ export function SubmissionCheck({ children }: SubmissionCheckProps) {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="w-8 h-8 mx-auto mb-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-muted-foreground">Checking for existing submission...</p>
+            <p className="text-muted-foreground">
+              Checking for existing submission...
+            </p>
           </div>
         </div>
       </div>

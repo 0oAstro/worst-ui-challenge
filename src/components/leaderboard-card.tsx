@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
-import { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { sanitizeCodepenId } from "@/lib/security";
 import type { SubmissionWithAuthor } from "@/lib/voting";
 
@@ -34,30 +34,30 @@ export function LeaderboardCard({ submission, rank }: LeaderboardCardProps) {
         console.error("Error fetching vote state:", error);
       }
     };
-    
+
     fetchVoteState();
   }, [submission.id]);
 
   const handleVote = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (isVoting) return;
-    
+
     setIsVoting(true);
     try {
       const response = await fetch(`/api/submission/${submission.id}/vote`, {
         method: hasVoted ? "DELETE" : "POST",
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         if (data.alreadyVoted !== undefined) {
           setHasVoted(!hasVoted);
-          setTotalVotes(prev => hasVoted ? prev - 1 : prev + 1);
+          setTotalVotes((prev) => (hasVoted ? prev - 1 : prev + 1));
         } else {
           setHasVoted(!hasVoted);
-          setTotalVotes(prev => hasVoted ? prev - 1 : prev + 1);
+          setTotalVotes((prev) => (hasVoted ? prev - 1 : prev + 1));
         }
       } else if (response.status === 403) {
         const data = await response.json();
@@ -66,7 +66,9 @@ export function LeaderboardCard({ submission, rank }: LeaderboardCardProps) {
         toast.error("Please log in to vote.");
       } else if (response.status === 429) {
         const data = await response.json();
-        toast.error(data.error || "Vote limit reached. You can only vote up to 10 times.");
+        toast.error(
+          data.error || "Vote limit reached. You can only vote up to 10 times.",
+        );
       } else {
         toast.error("Failed to vote. Please try again.");
       }
@@ -117,12 +119,14 @@ export function LeaderboardCard({ submission, rank }: LeaderboardCardProps) {
               onClick={handleVote}
               disabled={isVoting}
               className={`h-8 px-3 ${
-                hasVoted 
-                  ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                hasVoted
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
                   : "hover:bg-primary hover:text-primary-foreground"
               }`}
             >
-              <Heart className={`w-4 h-4 mr-1 ${hasVoted ? "fill-current" : ""}`} />
+              <Heart
+                className={`w-4 h-4 mr-1 ${hasVoted ? "fill-current" : ""}`}
+              />
               {totalVotes}
             </Button>
           </div>

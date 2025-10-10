@@ -1,8 +1,8 @@
 export const dynamic = "force-dynamic";
 
 import { Trophy } from "lucide-react";
-import { getTopSubmissions } from "@/lib/voting";
 import { LeaderboardCard } from "@/components/leaderboard-card";
+import { getTopSubmissions } from "@/lib/voting";
 
 export default async function LeaderboardPage() {
   const submissions = await getTopSubmissions(10);
@@ -11,7 +11,9 @@ export default async function LeaderboardPage() {
     return (
       <main className="container mx-auto px-6 sm:px-8 py-16 sm:py-20 max-w-4xl">
         <div className="text-center mb-12 sm:mb-16">
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-6 sm:mb-8">Leaderboard</h1>
+          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-6 sm:mb-8">
+            Leaderboard
+          </h1>
           <p className="text-lg sm:text-xl text-muted-foreground">
             Top performing terrible UI submissions
           </p>
@@ -32,7 +34,9 @@ export default async function LeaderboardPage() {
   return (
     <main className="container mx-auto px-6 sm:px-8 py-16 sm:py-20 max-w-4xl">
       <div className="text-center mb-12 sm:mb-16">
-        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-6 sm:mb-8">Leaderboard</h1>
+        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-6 sm:mb-8">
+          Leaderboard
+        </h1>
         <p className="text-lg sm:text-xl text-muted-foreground">
           Top performing terrible UI submissions
         </p>
@@ -40,10 +44,10 @@ export default async function LeaderboardPage() {
 
       <div className="space-y-4 sm:space-y-6">
         {submissions.map((submission, index) => (
-          <LeaderboardCard 
-            key={submission.id} 
-            submission={submission} 
-            rank={index + 1} 
+          <LeaderboardCard
+            key={submission.id}
+            submission={submission}
+            rank={index + 1}
           />
         ))}
       </div>

@@ -55,29 +55,29 @@ export const getLatestSubmissions = async (
 
 export const getSubmissionById = async (submissionId: string) => {
   const supabase = await createSupabaseServerClient();
-  
+
   // Get submission data
   const { data: submission, error: submissionError } = await supabase
     .from("submissions")
     .select("*")
     .eq("id", submissionId)
     .maybeSingle();
-    
+
   if (submissionError) throw new Error(submissionError.message);
   if (!submission) return null;
-  
+
   // Get author name from profiles
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("display_name")
     .eq("id", submission.user_id)
     .maybeSingle();
-    
+
   if (profileError) throw new Error(profileError.message);
-  
+
   return {
     ...submission,
-    author_name: profile?.display_name || "Anonymous"
+    author_name: profile?.display_name || "Anonymous",
   } as SubmissionWithAuthor;
 };
 

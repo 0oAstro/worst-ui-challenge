@@ -1,10 +1,16 @@
 "use client";
 
 import type { User } from "@supabase/supabase-js";
+import {
+  IconHome,
+  IconLogin,
+  IconLogout,
+  IconPlus,
+  IconTrophy,
+} from "@tabler/icons-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { IconHome, IconTrophy, IconPlus, IconLogout, IconLogin } from "@tabler/icons-react";
 import {
   MobileNav,
   MobileNavHeader,
@@ -35,7 +41,6 @@ export function MainNav({ user }: { user: User | null }) {
     { name: "Submit", link: "/submission/new", icon: IconPlus },
   ];
 
-
   return (
     <Navbar className="top-2">
       <NavBody>
@@ -52,7 +57,10 @@ export function MainNav({ user }: { user: User | null }) {
               Logout
             </NavbarButton>
           ) : (
-            <NavbarButton href={`/login?next=${pathname}`} className="flex items-center gap-2">
+            <NavbarButton
+              href={`/login?next=${pathname}`}
+              className="flex items-center gap-2"
+            >
               <IconLogin className="w-4 h-4" />
               Login
             </NavbarButton>
@@ -89,7 +97,10 @@ export function MainNav({ user }: { user: User | null }) {
                 Logout
               </NavbarButton>
             ) : (
-              <NavbarButton href={`/login?next=${pathname}`} className="w-full flex items-center justify-center gap-2">
+              <NavbarButton
+                href={`/login?next=${pathname}`}
+                className="w-full flex items-center justify-center gap-2"
+              >
                 <IconLogin className="w-4 h-4" />
                 Login
               </NavbarButton>

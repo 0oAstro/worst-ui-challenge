@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/utils/supabase/server";
 import { isValidRedirectPath } from "@/lib/security";
+import { createSupabaseServerClient } from "@/utils/supabase/server";
 
 // Handles the OAuth code exchange after redirect from Microsoft
 export const GET = async (req: NextRequest) => {
@@ -9,16 +9,24 @@ export const GET = async (req: NextRequest) => {
   const error = url.searchParams.get("error");
   const errorDescription = url.searchParams.get("error_description");
   const nextParam = url.searchParams.get("next");
-  
+
   // Validate redirect path to prevent open redirects
-  const next = nextParam && isValidRedirectPath(nextParam) ? nextParam : "/leaderboard";
+  const next =
+    nextParam && isValidRedirectPath(nextParam) ? nextParam : "/leaderboard";
 
   // Get the base URL for redirects - use request headers for production
-  const host = req.headers.get('host');
-  const protocol = req.headers.get('x-forwarded-proto') || 'https';
-  const baseUrl = process.env.NODE_ENV === 'production' 
-    ? `${protocol}://${host}`
-    : 'http://localhost:3000';
+  const getURL = () => {
+    let url =
+      process?.env?.NEXT_PUBLIC_SITE_URL ?? // Set this to your site URL in production env.
+      process?.env?.NEXT_PUBLIC_VERCEL_URL ?? // Automatically set by Vercel.
+      "http://localhost:3000/";
+    // Make sure to include `https://` when not localhost.
+    url = url.startsWith("http") ? url : `https://${url}`;
+    // Make sure to include a trailing `/`.
+    url = url.endsWith("/") ? url : `${url}/`;
+    return url;
+  };
+  const baseUrl = getURL();
 
   // Handle OAuth errors
   if (error) {
@@ -43,12 +51,16 @@ export const GET = async (req: NextRequest) => {
   const supabase = await createSupabaseServerClient();
 
   try {
-    const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-    
+    const { data, error: exchangeError } =
+      await supabase.auth.exchangeCodeForSession(code);
+
     if (exchangeError) {
       console.error("Session exchange error:", exchangeError);
       return NextResponse.redirect(
-        new URL(`/login?error=${encodeURIComponent(exchangeError.message)}`, baseUrl),
+        new URL(
+          `/login?error=${encodeURIComponent(exchangeError.message)}`,
+          baseUrl,
+        ),
       );
     }
 
@@ -56,36 +68,44 @@ export const GET = async (req: NextRequest) => {
     if (data.user) {
       // Update display name if it's Anonymous or null
       const displayName = data.user.user_metadata?.full_name || "Anonymous";
-      
-      if (displayName && displayName !== 'Anonymous') {
+
+      if (displayName && displayName !== "Anonymous") {
         // Check current profile and update if needed
         const { data: profile } = await supabase
-          .from('profiles')
-          .select('display_name')
-          .eq('id', data.user.id)
+          .from("profiles")
+          .select("display_name")
+          .eq("id", data.user.id)
           .single();
-        
-        if (!profile || profile.display_name === 'Anonymous' || !profile.display_name) {
-          await supabase
-            .from('profiles')
-            .upsert({
-              id: data.user.id,
-              display_name: displayName
-            });
+
+        if (
+          !profile ||
+          profile.display_name === "Anonymous" ||
+          !profile.display_name
+        ) {
+          await supabase.from("profiles").upsert({
+            id: data.user.id,
+            display_name: displayName,
+          });
         }
       }
-      
+
       // Successful session creation; redirect to main page or intended URL
       return NextResponse.redirect(new URL(next, baseUrl));
     } else {
       return NextResponse.redirect(
-        new URL(`/login?error=${encodeURIComponent("Failed to create user session")}`, baseUrl),
+        new URL(
+          `/login?error=${encodeURIComponent("Failed to create user session")}`,
+          baseUrl,
+        ),
       );
     }
   } catch (err) {
     console.error("Unexpected error in auth callback:", err);
     return NextResponse.redirect(
-      new URL(`/login?error=${encodeURIComponent("An unexpected error occurred")}`, baseUrl),
+      new URL(
+        `/login?error=${encodeURIComponent("An unexpected error occurred")}`,
+        baseUrl,
+      ),
     );
   }
 };

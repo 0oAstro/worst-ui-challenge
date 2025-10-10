@@ -26,11 +26,11 @@ export async function createSubmissionAction(params: {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
-  
+
   if (authError) {
     throw new Error(authError.message);
   }
-  
+
   if (!user) {
     throw new Error("You must be signed in to submit.");
   }
